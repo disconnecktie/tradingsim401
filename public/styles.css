@@ -38,3 +38,29 @@ body {
     font-size: 0.9rem;
   }
   
+  .graph {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+  }
+  
+  .chart-placeholder {
+    height: 300px;
+    background: repeating-linear-gradient(
+      45deg,
+      #e0e0e0,
+      #e0e0e0 10px,
+      #f9f9f9 10px,
+      #f9f9f9 20px
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-style: italic;
+    border-radius: 4px;
+    margin-top: 1rem;
+  }
+  

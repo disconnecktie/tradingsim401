@@ -17,6 +17,14 @@ app.use(express.static('public'));
 app.get(`/`, (req, res) => {
 	res.render(`index`, { title: `Home`, appName: `StockTrader`});
 });
+app.get('/dashboard', (req, res) => {
+	res.render('dashboard', { title: 'Dashboard'});
+});
+
+// Catch-all 404 handler (MUST be last)
+app.use((req, res) => {
+	res.status(404).render('404', { title: 'Not Found' });
+});
 
 // Start Server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
