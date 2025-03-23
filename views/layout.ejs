@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
   <title><%= title %></title>
@@ -7,20 +7,28 @@
 </head>
 <body>
   <header>
-    <h1>TradeSim401</h1>
-    <nav>
-      <a href="/">Home</a>
-      <a href="/dashboard">Dashboard</a>
-      <a href="/trade">Trade</a>
+    <nav class="navbar">
+      <div class="navbar-brand">
+        <a href="/" class="brand-link">📈 Trade Sim 401</a>
+      </div>
+      <ul class="navbar-links">
+        <% if (user) { %>
+          <li><a href="/dashboard">Dashboard</a></li>
+          <li><a href="/logout">Logout</a></li>
+        <% } else { %>
+          <li><a href="/">Login</a></li>
+          <li><a href="/register">Create Account</a></li>
+        <% } %>
+      </ul>
     </nav>
   </header>
 
-  <main>
+  <main class="content">
     <%- body %>
   </main>
 
-  <footer>
-    <p>&copy; <%= new Date().getFullYear() %> TradeSim401</p>
+  <footer class="footer">
+    <p>&copy; 2025 StockTrader - ASU IFT 401 Group 8</p>
   </footer>
 </body>
 </html>

@@ -1,0 +1,51 @@
+<h2><%= symbol.toUpperCase() %> - Stock Details</h2>
+
+<section class="stock-summary">
+  <p><strong>Current Price:</strong> $XXX.XX</p>
+  <p><strong>Owned Shares:</strong> X shares</p>
+</section>
+
+<div class="trade-toggle">
+  <button onclick="showTab('buy')" id="buyBtn" class="active">Buy</button>
+  <button onclick="showTab('sell')" id="sellBtn">Sell</button>
+</div>
+
+<div id="buyForm" class="trade-form">
+  <h3>Buy Shares</h3>
+  <form action="/api/trade/buy" method="POST">
+    <input type="hidden" name="symbol" value="<%= symbol %>">
+    
+    <label for="buyQty">Quantity:</label><br>
+    <input type="number" id="buyQty" name="quantity" min="1" required><br><br>
+
+    <p><strong>Market Price:</strong> $XXX.XX</p>
+    <p><strong>Estimated Cost:</strong> $---.--</p>
+
+    <button type="submit">Buy</button>
+  </form>
+</div>
+
+<div id="sellForm" class="trade-form" style="display:none;">
+  <h3>Sell Shares</h3>
+  <form action="/api/trade/sell" method="POST">
+    <input type="hidden" name="symbol" value="<%= symbol %>">
+    
+    <label for="sellQty">Quantity:</label><br>
+    <input type="number" id="sellQty" name="quantity" min="1" required><br><br>
+
+    <p><strong>Market Price:</strong> $XXX.XX</p>
+    <p><strong>Estimated Proceeds:</strong> $---.--</p>
+
+    <button type="submit">Sell</button>
+  </form>
+</div>
+
+<script>
+  function showTab(tab) {
+    document.getElementById('buyForm').style.display = tab === 'buy' ? 'block' : 'none';
+    document.getElementById('sellForm').style.display = tab === 'sell' ? 'block' : 'none';
+    
+    document.getElementById('buyBtn').classList.toggle('active', tab === 'buy');
+    document.getElementById('sellBtn').classList.toggle('active', tab === 'sell');
+  }
+</script>

@@ -1,16 +1,45 @@
-<h2>Dashboard</h2>
-<p>Welcome back, Trader! Here's your (mock) portfolio:</p>
+<h2>Welcome back, <%= user.name || user.email %> 👋</h2>
 
-<ul>
-  <li>TSLA – 10 shares – $1,050.00</li>
-  <li>NVDA – 5 shares – $725.00</li>
-  <li>AAPL – 12 shares – $850.00</li>
-</ul>
+<section class="portfolio-summary">
+  <h3>Total Portfolio Value</h3>
+  <p class="portfolio-value">$12,345.67</p>
+  <p class="performance positive">+2.75% (24h)</p>
+</section>
 
-<section class="graph">
-  <h3>Performance Chart</h3>
-  <div class="chart-placeholder">
-    <!-- This will be replaced by an actual chart (Chart.js, etc.) -->
-    <p>[ Graph will render here ]</p>
+<section class="portfolio-graph">
+  <h4>Performance Graph</h4>
+  <div class="graph-placeholder">
+    <p>[Graph Placeholder]</p>
   </div>
+</section>
+
+<section class="portfolio-stocks">
+  <h4>Your Holdings</h4>
+  <table>
+    <thead>
+      <tr>
+        <th>Ticker</th>
+        <th>Shares</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a href="/ticker/AAPL">AAPL</a></td>
+        <td>10</td>
+        <td>$1,850.00</td>
+      </tr>
+      <tr>
+        <td><a href="/ticker/TSLA">TSLA</a></td>
+        <td>5</td>
+        <td>$1,000.00</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="dashboard-links">
+  <a href="/search" class="dashboard-btn">🔍 Search Stocks</a>
+  <a href="/cash" class="dashboard-btn">💵 Manage Funds</a>
+  <a href="/transactions" class="dashboard-btn">📄 View Transactions</a>
 </section>
