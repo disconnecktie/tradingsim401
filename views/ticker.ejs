@@ -1,9 +1,14 @@
-<h2><%= symbol.toUpperCase() %> - Stock Details</h2>
+<h2 id="stock-title"><%= symbol.toUpperCase() %> - Stock Details</h2>
+<a href="/search" style="display:inline-block; margin-bottom: 1rem; text-decoration: none; color: #007bff;">
+  ← Back to Search
+</a>
 
-<section class="stock-summary">
-  <p><strong>Current Price:</strong> $XXX.XX</p>
-  <p><strong>Owned Shares:</strong> X shares</p>
+<section class="stock-summary" id="stock-summary">
+  <p><strong>Current Price:</strong> $<span id="current-price">...</span></p>
+  <p><strong>Owned Shares:</strong> X shares</p> <!-- You can hook this up later -->
 </section>
+
+<canvas id="priceChart" width="800" height="400"></canvas>
 
 <div class="trade-toggle">
   <button onclick="showTab('buy')" id="buyBtn" class="active">Buy</button>
@@ -18,8 +23,8 @@
     <label for="buyQty">Quantity:</label><br>
     <input type="number" id="buyQty" name="quantity" min="1" required><br><br>
 
-    <p><strong>Market Price:</strong> $XXX.XX</p>
-    <p><strong>Estimated Cost:</strong> $---.--</p>
+    <p><strong>Market Price:</strong> $<span id="buy-price">...</span></p>
+    <p><strong>Estimated Cost:</strong> $<span id="buy-cost">...</span></p>
 
     <button type="submit">Buy</button>
   </form>
@@ -33,18 +38,69 @@
     <label for="sellQty">Quantity:</label><br>
     <input type="number" id="sellQty" name="quantity" min="1" required><br><br>
 
-    <p><strong>Market Price:</strong> $XXX.XX</p>
-    <p><strong>Estimated Proceeds:</strong> $---.--</p>
+    <p><strong>Market Price:</strong> $<span id="sell-price">...</span></p>
+    <p><strong>Estimated Proceeds:</strong> $<span id="sell-proceeds">...</span></p>
 
     <button type="submit">Sell</button>
   </form>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+  const symbol = "<%= symbol %>";
+
+  // Load stock data
+  fetch(`/api/stock/${symbol}`)
+    .then(res => res.json())
+    .then(stock => {
+      const price = Number(stock.current_price).toFixed(2);
+      document.getElementById('current-price').textContent = price;
+      document.getElementById('buy-price').textContent = price;
+      document.getElementById('sell-price').textContent = price;
+
+      // Live cost/proceeds estimate
+      document.getElementById('buyQty').addEventListener('input', () => {
+        const qty = parseInt(document.getElementById('buyQty').value) || 0;
+        document.getElementById('buy-cost').textContent = (qty * price).toFixed(2);
+      });
+
+      document.getElementById('sellQty').addEventListener('input', () => {
+        const qty = parseInt(document.getElementById('sellQty').value) || 0;
+        document.getElementById('sell-proceeds').textContent = (qty * price).toFixed(2);
+      });
+    });
+
+  // Load history
+  fetch(`/api/history/${symbol}`)
+    .then(res => res.json())
+    .then(data => {
+      const labels = data.map(d => new Date(d.recorded_at).toLocaleString());
+      const prices = data.map(d => parseFloat(d.price));
+
+      new Chart(document.getElementById('priceChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: `${symbol} Price History`,
+            data: prices,
+            fill: false,
+            borderWidth: 2
+          }]
+        },
+        options: {
+          scales: {
+            x: { title: { display: true, text: 'Time' }},
+            y: { title: { display: true, text: 'Price ($)' }}
+          }
+        }
+      });
+    });
+
   function showTab(tab) {
     document.getElementById('buyForm').style.display = tab === 'buy' ? 'block' : 'none';
     document.getElementById('sellForm').style.display = tab === 'sell' ? 'block' : 'none';
-    
+
     document.getElementById('buyBtn').classList.toggle('active', tab === 'buy');
     document.getElementById('sellBtn').classList.toggle('active', tab === 'sell');
   }
