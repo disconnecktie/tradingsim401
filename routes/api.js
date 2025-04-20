@@ -38,4 +38,34 @@ router.get('/api/history/:symbol', checkAuth, async (req, res) => {
     }
 });
 
+// API: Portfolio History
+router.get('/api/portfolio/history', checkAuth, async (req, res) => {
+    const userId = req.session.user.id;
+  
+    try {
+      const [transactions] = await db.query(
+        `SELECT transaction_time, quantity, price_at_transaction
+         FROM user_transactions
+         WHERE user_id = ? AND transaction_type = 'buy'
+         ORDER BY transaction_time ASC`,
+        [userId]
+      );
+  
+      let total = 0;
+      const history = transactions.map(tx => {
+        total += tx.quantity * tx.price_at_transaction;
+        return {
+          date: tx.transaction_time,
+          value: total
+        };
+      });
+  
+      res.json(history);
+    } catch (err) {
+      console.error('❌ Failed to build portfolio history:', err);
+      res.status(500).json({ error: 'Failed to build graph data' });
+    }
+});
+  
+
 module.exports = router;

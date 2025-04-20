@@ -2,15 +2,22 @@
 
 <section class="portfolio-summary">
   <h3>Total Portfolio Value</h3>
-  <p class="portfolio-value">$12,345.67</p>
-  <p class="performance positive">+2.75% (24h)</p>
+  <p class="portfolio-value">$<%= totalValueNow.toFixed(2) %></p>
+  <% if (percentChange === 0) { %>
+    <p class="performance neutral">No change (24h)</p>
+  <% } else { %>
+    <p class="performance <%= percentChange >= 0 ? 'positive' : 'negative' %>">
+      <%= percentChange >= 0 ? '+' : '' %><%= percentChange.toFixed(2) %>% (24h)
+  </p>
+<% } %>
+
 </section>
 
 <section class="portfolio-graph">
   <h4>Performance Graph</h4>
-  <div class="graph-placeholder">
-    <p>[Graph Placeholder]</p>
-  </div>
+  <div class="portfolio-graph">
+    <canvas id="portfolioChart" width="600" height="300"></canvas>
+  </div>  
 </section>
 
 <section class="portfolio-stocks">
@@ -21,20 +28,25 @@
         <th>Ticker</th>
         <th>Shares</th>
         <th>Value</th>
+        <th>Last Buy</th>
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td><a href="/ticker/AAPL">AAPL</a></td>
-        <td>10</td>
-        <td>$1,850.00</td>
-      </tr>
-      <tr>
-        <td><a href="/ticker/TSLA">TSLA</a></td>
-        <td>5</td>
-        <td>$1,000.00</td>
-      </tr>
-    </tbody>
+      <% if (holdings.length === 0) { %>
+        <tr>
+          <td colspan="3">You don't own any stocks yet.</td>
+        </tr>
+      <% } else { %>
+        <% holdings.forEach(h => { %>
+          <tr>
+            <td><a href="/ticker/<%= h.ticker_symbol %>"><%= h.ticker_symbol %></a></td>
+            <td><%= h.quantity %></td>
+            <td>$<%= (h.quantity * h.current_price).toFixed(2) %></td>
+            <td><%= new Date(h.last_purchase_time).toLocaleString() %></td>
+          </tr>
+        <% }) %>
+      <% } %>
+    </tbody>    
   </table>
 </section>
 
@@ -43,3 +55,35 @@
   <a href="/cash" class="dashboard-btn">💵 Manage Funds</a>
   <a href="/transactions" class="dashboard-btn">📄 View Transactions</a>
 </section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  async function renderPortfolioChart() {
+    const res = await fetch('/api/portfolio/history');
+    const data = await res.json();
+
+    const ctx = document.getElementById('portfolioChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.map(d => new Date(d.date).toLocaleString()),
+        datasets: [{
+          label: 'Portfolio Value',
+          data: data.map(d => d.value),
+          borderWidth: 2,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: false
+          }
+        }
+      }
+    });
+  }
+
+  renderPortfolioChart();
+</script>

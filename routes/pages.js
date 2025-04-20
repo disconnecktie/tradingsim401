@@ -26,7 +26,15 @@ router.get('/search', checkAuth, async (req, res) => {
     }
 });
 
-router.get('/ticker/:symbol', checkAuth, (req, res) => res.render('ticker', { title: 'Stock Info', symbol: req.params.symbol }));
+router.get('/ticker/:symbol', checkAuth, (req, res) => {
+    const referer = req.get('Referrer') || '/search'; // fallback to /search
+    res.render('ticker', {
+      title: 'Stock Info',
+      symbol: req.params.symbol,
+      referer
+    });
+});
+
 router.get('/transactions', checkAuth, (req, res) => res.render('transactions', { title: 'Transaction History' }));
 router.get('/cash', checkAuth, (req, res) => res.render('cash', { title: 'Manage Cash' }));
 

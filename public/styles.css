@@ -177,3 +177,7 @@ footer.footer {
   color: red;
   font-weight: bold;
 }
+
+.performance.positive { color: green; }
+.performance.negative { color: red; }
+.performance.neutral  { color: gray; }

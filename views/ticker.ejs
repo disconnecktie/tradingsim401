@@ -1,7 +1,5 @@
 <h2 id="stock-title"><%= symbol.toUpperCase() %> - Stock Details</h2>
-<a href="/search" style="display:inline-block; margin-bottom: 1rem; text-decoration: none; color: #007bff;">
-  ← Back to Search
-</a>
+<a href="<%= referer %>">← Back</a>
 
 <section class="stock-summary" id="stock-summary">
   <p><strong>Current Price:</strong> $<span id="current-price">...</span></p>
