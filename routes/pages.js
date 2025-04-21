@@ -36,7 +36,17 @@ router.get('/ticker/:symbol', checkAuth, (req, res) => {
 });
 
 router.get('/transactions', checkAuth, (req, res) => res.render('transactions', { title: 'Transaction History' }));
-router.get('/cash', checkAuth, (req, res) => res.render('cash', { title: 'Manage Cash' }));
+
+router.get('/cash', checkAuth, async (req, res) => {
+    const [userRows] = await db.query('SELECT * FROM users WHERE id = ?', [req.session.user.id]);
+    const user = userRows[0];
+    user.cashBalance = parseFloat(user.cashBalance);
+  
+    res.render('cash', {
+      title: 'Manage Funds',
+      user
+    });
+  });  
 
 // Admin routes
 router.get('/admin', checkAuth, checkAdmin, (req, res) =>

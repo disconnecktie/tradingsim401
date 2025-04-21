@@ -13,6 +13,13 @@ router.get('/', checkAuth, async (req, res) => {
   const userId = req.session.user.id;
 
   try {
+    // ✅ Fetch full user (includes cashBalance)
+    const [userRows] = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
+    const fullUser = userRows[0];
+
+    fullUser.cashBalance = parseFloat(fullUser.cashBalance);
+
+    // ✅ Fetch user holdings
     const [holdings] = await db.query(
       `SELECT uh.ticker_symbol, uh.quantity, s.current_price,
               MAX(ut.transaction_time) AS last_purchase_time
@@ -27,13 +34,13 @@ router.get('/', checkAuth, async (req, res) => {
       [userId]
     );
 
-    // Calculate total portfolio value
+    // ✅ Calculate total portfolio value
     const totalValueNow = holdings.reduce(
       (sum, h) => sum + (h.quantity * h.current_price),
       0
     );
 
-    // Get 24h-ago prices
+    // ✅ Get 24h-ago prices
     let totalValue24hAgo = 0;
     if (holdings.length > 0) {
       const [oldPrices] = await db.query(
@@ -62,11 +69,12 @@ router.get('/', checkAuth, async (req, res) => {
 
     res.render('dashboard', {
       title: 'Dashboard',
-      user: req.session.user,
+      user: fullUser,
       holdings,
       totalValueNow,
       percentChange
     });
+
   } catch (err) {
     console.error('❌ Dashboard error:', err);
     res.render('dashboard', {

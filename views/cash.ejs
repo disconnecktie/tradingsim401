@@ -1,2 +1,30 @@
-<h2>Deposit / Withdraw Money Page</h2>
-<p>This is the Deposit / Withdraw Money Page page. Coming soon...</p>
+<main class="cash-page">
+    <h2>Manage Funds 💵</h2>
+  
+    <section class="cash-balance">
+      <h3>Available Balance</h3>
+      <p class="cash-amount">$<%= user.cashBalance.toFixed(2) %></p>
+    </section>
+  
+    <section class="cash-actions">
+      <div class="cash-form">
+        <h4>Deposit Funds</h4>
+        <form action="/cash/deposit" method="POST">
+          <input type="number" name="amount" step="0.01" min="0.01" placeholder="Amount to deposit" required />
+          <button type="submit">Deposit</button>
+        </form>
+      </div>
+  
+      <div class="cash-form">
+        <h4>Withdraw Funds</h4>
+        <form action="/cash/withdraw" method="POST">
+          <input type="number" name="amount" step="0.01" min="0.01" placeholder="Amount to withdraw" required />
+          <button type="submit">Withdraw</button>
+        </form>
+      </div>
+    </section>
+  
+    <div class="back-btn">
+      <a href="/dashboard">← Back to Dashboard</a>
+    </div>
+  </main>

@@ -181,3 +181,81 @@ footer.footer {
 .performance.positive { color: green; }
 .performance.negative { color: red; }
 .performance.neutral  { color: gray; }
+
+.cash-page {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.cash-balance {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.cash-amount {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #2d6a4f;
+}
+
+.cash-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.cash-form {
+  flex: 1;
+  background: #f9f9f9;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.cash-form h4 {
+  margin-bottom: 0.5rem;
+}
+
+.cash-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cash-form input[type="number"] {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.cash-form button {
+  padding: 0.5rem;
+  font-weight: bold;
+  background-color: #0077cc;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.cash-form button:hover {
+  background-color: #005fa3;
+}
+
+.back-btn {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.back-btn a {
+  color: #0077cc;
+  text-decoration: none;
+  font-weight: bold;
+}

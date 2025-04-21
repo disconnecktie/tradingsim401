@@ -32,12 +32,15 @@ const authRoutes = require('./routes/auth');
 const dashboardRoutes = require('./routes/dashboard');
 const pagesRoutes = require('./routes/pages');
 const apiRoutes = require('./routes/api'); // ✅ API routes for stock/history
+const cashRoutes = require('./routes/cash');
+
 
 // Route mounting
 app.use('/', authRoutes);         // login, register, logout
 app.use('/dashboard', dashboardRoutes); // dashboard
 app.use('/', pagesRoutes);        // pages like search, ticker, admin
 app.use('/', apiRoutes);          // ✅ API: /api/stock/:symbol, etc.
+app.use('/cash', cashRoutes);
 
 // 404 handler
 app.use((req, res) => {
