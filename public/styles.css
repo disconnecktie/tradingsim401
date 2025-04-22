@@ -383,3 +383,73 @@ footer.footer {
   border-radius: 6px;
   font-weight: bold;
 }
+
+.market-hours-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 400px;
+  margin-top: 2rem;
+}
+
+.market-hours-form label {
+  font-weight: bold;
+}
+
+.market-hours-form input[type="time"] {
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+.market-hours-form button {
+  padding: 0.5rem;
+  background-color: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.market-hours-form button:hover {
+  background-color: #333;
+}
+
+.control-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.control-card ul li {
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-small {
+  font-size: 0.8rem;
+  background: transparent;
+  border: none;
+  color: red;
+  cursor: pointer;
+}
+
+.btn-small:hover {
+  color: darkred;
+}
+
+.market-hours-form button,
+.control-card form button[type="submit"] {
+  padding: 0.5rem 1.25rem;
+  background-color: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.control-card form button[type="submit"]:hover {
+  background-color: #333;
+}

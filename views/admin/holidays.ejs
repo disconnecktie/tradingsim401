@@ -1,2 +1,38 @@
-<h2>📅 Manage Market Holidays</h2>
-<p>This page will allow you to add/remove specific dates when trading is closed.</p>
+<h1>📅 Market Holidays</h1>
+
+<% if (flash) { %>
+  <p class="flash-msg"><%= flash %></p>
+<% } %>
+
+<section class="control-card">
+  <h2>Add New Holiday</h2>
+  <form action="/admin/holidays" method="POST">
+    <label for="name">Holiday Name:</label>
+    <input type="text" id="name" name="name" required>
+
+    <label for="holiday_date">Date:</label>
+    <input type="date" id="holiday_date" name="holiday_date" required>
+
+    <button type="submit" class="btn">Add Holiday</button>
+  </form>
+</section>
+
+<section class="control-card">
+  <h2>Upcoming Holidays</h2>
+  <% if (holidays.length === 0) { %>
+    <p>No holidays set.</p>
+  <% } else { %>
+    <ul>
+      <% holidays.forEach(h => { %>
+        <li>
+          <strong><%= h.holiday_date %></strong>: <%= h.name %>
+          <form action="/admin/holidays/delete/<%= h.id %>" method="POST" style="display:inline;">
+            <button type="submit" class="btn-small">❌</button>
+          </form>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>
+
+<a href="<%= dashboardPath %>" class="btn">← Back to Dashboard</a>

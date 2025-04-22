@@ -57,13 +57,28 @@ router.get('/admin/create-stock', checkAuth, checkAdmin, (req, res) =>
     res.render('admin/create-stock', { title: 'Create Stock' })
 );
   
-router.get('/admin/market-hours', checkAuth, checkAdmin, (req, res) =>
-    res.render('admin/market-hours', { title: 'Market Hours' })
-);
+router.get('/admin/market-hours', checkAuth, checkAdmin, async (req, res) => {
+    try {
+      const [rows] = await db.query('SELECT * FROM market_hours LIMIT 1');
+      const hours = rows[0];
+      res.render('admin/market-hours', {
+        title: 'Market Hours',
+        hours
+      });
+    } catch (err) {
+      console.error('❌ Failed to load market hours:', err);
+      res.render('admin/market-hours', {
+        title: 'Market Hours',
+        error: 'Could not load trading schedule.',
+        hours: null
+      });
+    }
+});
 
-router.get('/admin/holidays', checkAuth, checkAdmin, (req, res) =>
-    res.render('admin/holidays', { title: 'Market Holidays' })
-);
+router.get('/admin/holidays', checkAuth, checkAdmin, async (req, res) => {
+    const [holidays] = await db.query('SELECT * FROM market_holidays ORDER BY holiday_date');
+    res.render('admin/holidays', { title: 'Market Holidays', holidays });
+});
   
 router.get('/admin/activity-log', checkAuth, checkAdmin, (req, res) =>
     res.render('admin/activity-log', { title: 'Admin Activity Log' })
@@ -94,7 +109,7 @@ router.get('/admin/manage-users', checkAuth, checkRootAdmin, async (req, res) =>
         error: 'Failed to load user list.'
       });
     }
-});  
+});
 
 // Promote user to admin
 router.post('/admin/promote/:id', checkAuth, checkRootAdmin, async (req, res) => {
@@ -107,10 +122,10 @@ router.post('/admin/promote/:id', checkAuth, checkRootAdmin, async (req, res) =>
       req.session.flash = 'Failed to promote user.';
     }
     res.redirect('/admin/manage-users');
-  });
+});
   
-  // Demote admin to user
-  router.post('/admin/demote/:id', checkAuth, checkRootAdmin, async (req, res) => {
+// Demote admin to user
+router.post('/admin/demote/:id', checkAuth, checkRootAdmin, async (req, res) => {
     const targetId = parseInt(req.params.id);
     try {
       // 🛡️ Check if target is a superadmin
@@ -134,5 +149,52 @@ router.post('/admin/promote/:id', checkAuth, checkRootAdmin, async (req, res) =>
     }
     res.redirect('/admin/manage-users');
 });
+
+// Save Market Hours Updates
+router.post('/admin/market-hours', checkAuth, checkAdmin, async (req, res) => {
+    const { open_time, close_time } = req.body;
+  
+    try {
+      await db.query('UPDATE market_hours SET open_time = ?, close_time = ? WHERE id = 1', [
+        open_time,
+        close_time
+      ]);
+      req.session.flash = 'Market hours updated successfully.';
+    } catch (err) {
+      console.error('❌ Failed to update market hours:', err);
+      req.session.flash = 'Failed to update market hours.';
+    }
+  
+    res.redirect('/admin/market-hours');
+});
+  
+router.post('/admin/holidays', checkAuth, checkAdmin, async (req, res) => {
+    const { name, holiday_date } = req.body;
+  
+    try {
+      await db.query('INSERT INTO market_holidays (holiday_date, name) VALUES (?, ?)', [
+        holiday_date,
+        name
+      ]);
+      req.session.flash = 'Holiday added.';
+    } catch (err) {
+      console.error('❌ Error adding holiday:', err);
+      req.session.flash = 'Failed to add holiday.';
+    }
+  
+    res.redirect('/admin/holidays');
+});
+
+router.post('/admin/holidays/delete/:id', checkAuth, checkAdmin, async (req, res) => {
+    const id = req.params.id;
+    try {
+      await db.query('DELETE FROM market_holidays WHERE id = ?', [id]);
+      req.session.flash = 'Holiday removed.';
+    } catch (err) {
+      console.error('❌ Error deleting holiday:', err);
+      req.session.flash = 'Failed to delete holiday.';
+    }
+    res.redirect('/admin/holidays');
+});  
 
 module.exports = router;

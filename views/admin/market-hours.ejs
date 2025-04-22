@@ -1,0 +1,21 @@
+<h1>⏰ Market Hours</h1>
+
+<% if (flash) { %>
+  <p class="flash-msg"><%= flash %></p>
+<% } %>
+
+<% if (hours) { %>
+  <form action="/admin/market-hours" method="POST" class="market-hours-form">
+    <label for="open_time">Open Time:</label>
+    <input type="time" id="open_time" name="open_time" value="<%= hours.open_time %>" required>
+
+    <label for="close_time">Close Time:</label>
+    <input type="time" id="close_time" name="close_time" value="<%= hours.close_time %>" required>
+
+    <button type="submit">Save Changes</button>
+  </form>
+<% } else { %>
+  <p>Market hours could not be loaded.</p>
+<% } %>
+<br>
+<a href="<%= dashboardPath %>" class="btn">← Back to Admin Panel</a>

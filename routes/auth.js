@@ -38,9 +38,9 @@ router.post('/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     await db.query(
-      'INSERT INTO users (fullname, email, password_hash) VALUES (?, ?, ?)',
-      [fullname, email, hashedPassword]
-    );
+      'INSERT INTO users (fullname, email, password_hash, cashBalance) VALUES (?, ?, ?, ?)',
+      [fullname, email, hashedPassword, 0.00]
+    );    
 
     req.session.user = { name: fullname, email, role: 'user' };
     res.redirect('/dashboard');

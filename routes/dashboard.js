@@ -1,14 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { DateTime } = require('luxon'); // 🆕 Add Luxon for time zone support
 
-// Middleware to protect routes
 function checkAuth(req, res, next) {
   if (req.session.user) return next();
   res.redirect('/');
 }
 
-// GET /dashboard
 router.get('/', checkAuth, async (req, res) => {
   const userId = req.session.user.id;
 
@@ -16,8 +15,23 @@ router.get('/', checkAuth, async (req, res) => {
     // ✅ Fetch full user (includes cashBalance)
     const [userRows] = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
     const fullUser = userRows[0];
-
     fullUser.cashBalance = parseFloat(fullUser.cashBalance);
+
+    // ✅ Fetch market hours
+    const [marketRows] = await db.query('SELECT * FROM market_hours LIMIT 1');
+    const market = marketRows[0];
+
+    const now = DateTime.now().setZone(market.timezone || 'America/New_York');
+    const marketOpen = DateTime.fromFormat(market.open_time, 'HH:mm:ss', { zone: market.timezone });
+    const marketClose = DateTime.fromFormat(market.close_time, 'HH:mm:ss', { zone: market.timezone });
+
+    // 🆕 Check for holiday
+    const todayDate = now.toISODate(); // YYYY-MM-DD
+    const [holidays] = await db.query('SELECT * FROM market_holidays WHERE holiday_date = ?', [todayDate]);
+    const isHoliday = holidays.length > 0;
+
+    // ✅ Market is open only if it's not a holiday and within market hours
+    const isMarketOpen = market.is_open && now >= marketOpen && now <= marketClose && !isHoliday;
 
     // ✅ Fetch user holdings
     const [holdings] = await db.query(
@@ -34,13 +48,11 @@ router.get('/', checkAuth, async (req, res) => {
       [userId]
     );
 
-    // ✅ Calculate total portfolio value
     const totalValueNow = holdings.reduce(
       (sum, h) => sum + (h.quantity * h.current_price),
       0
     );
 
-    // ✅ Get 24h-ago prices
     let totalValue24hAgo = 0;
     if (holdings.length > 0) {
       const [oldPrices] = await db.query(
@@ -72,7 +84,8 @@ router.get('/', checkAuth, async (req, res) => {
       user: fullUser,
       holdings,
       totalValueNow,
-      percentChange
+      percentChange,
+      isMarketOpen // ✅ Send to EJS
     });
 
   } catch (err) {
@@ -83,7 +96,8 @@ router.get('/', checkAuth, async (req, res) => {
       holdings: [],
       totalValueNow: 0,
       percentChange: 0,
-      error: 'Could not load your portfolio.'
+      error: 'Could not load your portfolio.',
+      isMarketOpen: false // Fallback
     });
   }
 });

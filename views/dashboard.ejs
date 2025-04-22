@@ -1,5 +1,11 @@
 <h2>Welcome back, <%= user.name || user.email %> 👋</h2>
 
+<% if (typeof isMarketOpen !== 'undefined') { %>
+  <div class="market-status <%= isMarketOpen ? 'open' : 'closed' %>">
+    <%= isMarketOpen ? '✅ Market is currently OPEN' : '⛔ Market is currently CLOSED' %>
+  </div>
+<% } %>
+
 <section class="portfolio-summary">
   <h3>Total Portfolio Value</h3>
   <p class="portfolio-value">$<%= totalValueNow.toFixed(2) %></p>
