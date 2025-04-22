@@ -21,9 +21,24 @@ app.use(express.static('public'));
 
 // Global view variables
 app.use((req, res, next) => {
-  res.locals.user = req.session.user || null;
+  const user = req.session.user || null;
+  res.locals.user = user;
   res.locals.error = null;
   res.locals.query = '';
+
+  // Dynamically set dashboardPath
+  res.locals.dashboardPath =
+    user?.role === 'superadmin' ? '/admin/control-center' :
+    user?.role === 'admin' ? '/admin' :
+    '/dashboard';
+
+  next();
+});
+
+// Flash message support
+app.use((req, res, next) => {
+  res.locals.flash = req.session.flash || null;
+  delete req.session.flash;
   next();
 });
 
@@ -31,7 +46,7 @@ app.use((req, res, next) => {
 const authRoutes = require('./routes/auth');
 const dashboardRoutes = require('./routes/dashboard');
 const pagesRoutes = require('./routes/pages');
-const apiRoutes = require('./routes/api'); // ✅ API routes for stock/history
+const apiRoutes = require('./routes/api'); // API routes for stock/history
 const cashRoutes = require('./routes/cash');
 
 
@@ -39,7 +54,7 @@ const cashRoutes = require('./routes/cash');
 app.use('/', authRoutes);         // login, register, logout
 app.use('/dashboard', dashboardRoutes); // dashboard
 app.use('/', pagesRoutes);        // pages like search, ticker, admin
-app.use('/', apiRoutes);          // ✅ API: /api/stock/:symbol, etc.
+app.use('/', apiRoutes);          // API: /api/stock/:symbol, etc.
 app.use('/cash', cashRoutes);
 
 // 404 handler

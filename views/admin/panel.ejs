@@ -1,0 +1,27 @@
+<h1>🧰 Admin Panel</h1>
+
+<section class="control-card">
+  <h2>➕ Create Stock</h2>
+  <p>Add new stocks to the trading system by entering ticker symbol, volume, and starting price.</p>
+  <a href="/admin/create-stock" class="btn">Go to Create Stock</a>
+</section>
+
+<section class="control-card">
+  <h2>⏰ Market Hours</h2>
+  <p>Adjust the daily trading schedule, including open/close times.</p>
+  <a href="/admin/market-hours" class="btn">Configure Market Hours</a>
+</section>
+
+<section class="control-card">
+  <h2>📅 Market Holidays</h2>
+  <p>Specify holidays when the market will be closed.</p>
+  <a href="/admin/holidays" class="btn">Manage Holidays</a>
+</section>
+
+<% if (user.role === 'superadmin') { %>
+  <section class="control-card">
+    <h2>🛡️ Root Access</h2>
+    <p>Access system-level settings, admin management, and logs.</p>
+    <a href="/admin/control-center" class="btn">Control Center</a>
+  </section>
+<% } %>

@@ -13,7 +13,7 @@
       </div>
       <ul class="navbar-links">
         <% if (user) { %>
-          <li><a href="/dashboard">Dashboard</a></li>
+          <li><a href="<%= dashboardPath %>">Dashboard</a></li>
           <li><a href="/logout">Logout</a></li>
         <% } else { %>
           <li><a href="/">Login</a></li>

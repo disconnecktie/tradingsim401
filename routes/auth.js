@@ -78,7 +78,15 @@ router.post('/login', async (req, res) => {
       role: user.role
     };
 
-    res.redirect('/dashboard');
+    // 🔁 Role-based redirect
+    if (user.role === 'superadmin') {
+      return res.redirect('/admin/control-center');
+    } else if (user.role === 'admin') {
+      return res.redirect('/admin');
+    } else {
+      return res.redirect('/dashboard');
+    }
+
   } catch (err) {
     console.error(err);
     res.render('login', { title: 'Login', error: 'An error occurred. Please try again.' });

@@ -1,0 +1,50 @@
+<h1>👥 Manage Users</h1>
+
+<% if (error) { %>
+  <p class="error-msg"><%= error %></p>
+<% } %>
+
+<% if (flash) { %>
+    <p class="flash-msg"><%= flash %></p>
+<% } %>  
+
+<table class="user-table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Full Name</th>
+      <th>Email</th>
+      <th>Role</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% users.forEach(u => { %>
+      <tr>
+        <td><%= u.id %></td>
+        <td><%= u.fullname %></td>
+        <td><%= u.email %></td>
+        <td><%= u.role %></td>
+        <td>
+          <% if (u.id !== user.id) { %>
+            <% if (u.role === 'user') { %>
+              <form method="POST" action="/admin/promote/<%= u.id %>">
+                <button type="submit">Promote to Admin</button>
+              </form>
+            <% } else if (u.role === 'admin') { %>
+              <form method="POST" action="/admin/demote/<%= u.id %>">
+                <button type="submit">Demote to User</button>
+              </form>
+            <% } else { %>
+              <span>Superadmin</span>
+            <% } %>
+          <% } else { %>
+            <span>You</span>
+          <% } %>
+        </td>
+      </tr>
+    <% }); %>
+  </tbody>
+</table>
+<br>
+<a href="/admin/control-center" class="btn">← Back to Control Center</a>
