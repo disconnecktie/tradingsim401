@@ -23,12 +23,21 @@ router.get('/api/stock/:symbol', checkAuth, async (req, res) => {
     }
 });
 
-// API: Get historical price data
+// API: Get historical price data with optional range filtering
 router.get('/api/history/:symbol', checkAuth, async (req, res) => {
     const symbol = req.params.symbol.toUpperCase();
+    const range = req.query.range || '30d';
+
+    let interval;
+    if (range === '1d') interval = '1 DAY';
+    else if (range === '5d') interval = '5 DAY';
+    else interval = '30 DAY';
+
     try {
       const [rows] = await db.query(
-        'SELECT price, recorded_at FROM stock_history WHERE ticker_symbol = ? ORDER BY recorded_at ASC',
+        `SELECT price, recorded_at FROM stock_history 
+         WHERE ticker_symbol = ? AND recorded_at >= NOW() - INTERVAL ${interval}
+         ORDER BY recorded_at ASC`,
         [symbol]
       );
       res.json(rows);
@@ -38,34 +47,77 @@ router.get('/api/history/:symbol', checkAuth, async (req, res) => {
     }
 });
 
-// API: Portfolio History
 router.get('/api/portfolio/history', checkAuth, async (req, res) => {
     const userId = req.session.user.id;
+    const range = req.query.range || '1d';
+  
+    const now = require('luxon').DateTime.now();
+    let from;
+    let granularity;
+  
+    if (range === '30d') {
+      from = now.minus({ days: 30 });
+      granularity = '1d';
+    } else if (range === '5d') {
+      from = now.minus({ days: 5 });
+      granularity = '1h';
+    } else {
+      from = now.startOf('day');
+      granularity = '10m';
+    }
   
     try {
-      const [transactions] = await db.query(
-        `SELECT transaction_time, quantity, price_at_transaction
-         FROM user_transactions
-         WHERE user_id = ? AND transaction_type = 'buy'
-         ORDER BY transaction_time ASC`,
+      const [holdings] = await db.query(
+        'SELECT ticker_symbol, quantity FROM user_holdings WHERE user_id = ?',
         [userId]
       );
+      if (holdings.length === 0) return res.json([]);
   
-      let total = 0;
-      const history = transactions.map(tx => {
-        total += tx.quantity * tx.price_at_transaction;
-        return {
-          date: tx.transaction_time,
-          value: total
-        };
+      const tickerList = holdings.map(h => h.ticker_symbol);
+  
+      const [history] = await db.query(
+        `SELECT ticker_symbol, price, recorded_at
+         FROM stock_history
+         WHERE ticker_symbol IN (${tickerList.map(() => '?').join(',')})
+         AND recorded_at >= ?
+         ORDER BY recorded_at ASC`,
+        [...tickerList, from.toSQL()]
+      );
+  
+      const { DateTime } = require('luxon');
+      const pricesByTime = {};
+  
+      for (const row of history) {
+        const dt = DateTime.fromJSDate(row.recorded_at);
+        let rounded;
+  
+        if (granularity === '1d') {
+          rounded = dt.startOf('day').toISO();
+        } else if (granularity === '1h') {
+          rounded = dt.startOf('hour').toISO();
+        } else {
+          const mins = Math.floor(dt.minute / 10) * 10;
+          rounded = dt.set({ minute: mins, second: 0, millisecond: 0 }).toISO();
+        }
+  
+        if (!pricesByTime[rounded]) pricesByTime[rounded] = {};
+        pricesByTime[rounded][row.ticker_symbol] = row.price;
+      }
+  
+      const portfolio = Object.entries(pricesByTime).map(([timestamp, priceMap]) => {
+        let total = 0;
+        for (const h of holdings) {
+          const p = priceMap[h.ticker_symbol];
+          if (p) total += p * h.quantity;
+        }
+        return { date: timestamp, value: parseFloat(total.toFixed(2)) };
       });
   
-      res.json(history);
+      res.json(portfolio);
     } catch (err) {
       console.error('❌ Failed to build portfolio history:', err);
       res.status(500).json({ error: 'Failed to build graph data' });
     }
 });
-  
 
 module.exports = router;

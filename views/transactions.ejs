@@ -1,59 +1,34 @@
-<h2>Transaction History</h2>
+<h1>📄 Transaction History</h1>
 
-<section class="transaction-controls">
-  <input type="text" placeholder="Search by ticker or type..." />
-  <select>
-    <option value="">All</option>
-    <option value="buy">Buy</option>
-    <option value="sell">Sell</option>
-    <option value="deposit">Deposit</option>
-    <option value="withdraw">Withdraw</option>
-  </select>
-</section>
-
-<section class="transaction-list">
-  <table>
+<% if (error) { %>
+  <p class="error-msg"><%= error %></p>
+<% } else if (transactions.length === 0) { %>
+  <p>No transactions recorded yet.</p>
+<% } else { %>
+  <table class="transaction-list">
     <thead>
       <tr>
-        <th>Date</th>
         <th>Type</th>
         <th>Ticker</th>
-        <th>Status</th>
-        <th>Amount</th>
+        <th>Quantity</th>
+        <th>Price</th>
+        <th>Total</th>
+        <th>Date</th>
       </tr>
     </thead>
     <tbody>
-      <!-- Example data -->
-      <tr>
-        <td>Mar 21, 2025</td>
-        <td>Buy</td>
-        <td>AAPL</td>
-        <td>Completed</td>
-        <td class="amount negative">- $1850.00</td>
-      </tr>
-      <tr>
-        <td>Mar 20, 2025</td>
-        <td>Sell</td>
-        <td>TSLA</td>
-        <td>Completed</td>
-        <td class="amount positive">+ $1000.00</td>
-      </tr>
-      <tr>
-        <td>Mar 19, 2025</td>
-        <td>Deposit</td>
-        <td>—</td>
-        <td>Completed</td>
-        <td class="amount positive">+ $500.00</td>
-      </tr>
-      <tr>
-        <td>Mar 19, 2025</td>
-        <td>Buy</td>
-        <td>MSFT</td>
-        <td>Pending</td>
-        <td class="amount negative">- $800.00</td>
-      </tr>
+      <% transactions.forEach(t => { %>
+        <tr>
+          <td><%= t.transaction_type.toUpperCase() %></td>
+          <td><%= t.ticker_symbol || '-' %></td>
+          <td><%= t.quantity || '-' %></td>
+          <td><%= t.price ? '$' + t.price.toFixed(2) : '-' %></td>
+          <td><%= t.total ? '$' + t.total.toFixed(2) : '-' %></td>
+          <td><%= new Date(t.transaction_time).toLocaleString() %></td>
+        </tr>
+      <% }) %>
     </tbody>
   </table>
-</section>
-
-<a href="<%= dashboardPath %>">← Back to Dashboard</a>
+<% } %>
+<br>
+<a href="<%= dashboardPath %>" class="btn">← Back to Dashboard</a>

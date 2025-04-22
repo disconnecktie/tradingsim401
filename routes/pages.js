@@ -35,8 +35,26 @@ router.get('/ticker/:symbol', checkAuth, (req, res) => {
     });
 });
 
-router.get('/transactions', checkAuth, (req, res) => res.render('transactions', { title: 'Transaction History' }));
-
+router.get('/transactions', checkAuth, async (req, res) => {
+    try {
+      const [transactions] = await db.query(
+        `SELECT * FROM user_transactions WHERE user_id = ? ORDER BY transaction_time DESC`,
+        [req.session.user.id]
+      );
+      res.render('transactions', {
+        title: 'Transaction History',
+        transactions
+      });
+    } catch (err) {
+      console.error('❌ Error fetching transactions:', err);
+      res.render('transactions', {
+        title: 'Transaction History',
+        transactions: [],
+        error: 'Could not load your transaction history.'
+      });
+    }
+});
+  
 router.get('/cash', checkAuth, async (req, res) => {
     const [userRows] = await db.query('SELECT * FROM users WHERE id = ?', [req.session.user.id]);
     const user = userRows[0];

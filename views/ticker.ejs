@@ -3,8 +3,17 @@
 
 <section class="stock-summary" id="stock-summary">
   <p><strong>Current Price:</strong> $<span id="current-price">...</span></p>
-  <p><strong>Owned Shares:</strong> X shares</p> <!-- You can hook this up later -->
+  <p><strong>Owned Shares:</strong> X shares</p>
 </section>
+
+<div class="view-range-selector">
+  <label for="rangeSelector">View Range:</label>
+  <select id="rangeSelector">
+    <option value="1d">1 Day</option>
+    <option value="5d">5 Days</option>
+    <option value="30d" selected>30 Days</option>
+  </select>
+</div>
 
 <canvas id="priceChart" width="800" height="400"></canvas>
 
@@ -17,13 +26,10 @@
   <h3>Buy Shares</h3>
   <form action="/api/trade/buy" method="POST">
     <input type="hidden" name="symbol" value="<%= symbol %>">
-    
     <label for="buyQty">Quantity:</label><br>
     <input type="number" id="buyQty" name="quantity" min="1" required><br><br>
-
     <p><strong>Market Price:</strong> $<span id="buy-price">...</span></p>
     <p><strong>Estimated Cost:</strong> $<span id="buy-cost">...</span></p>
-
     <button type="submit">Buy</button>
   </form>
 </div>
@@ -32,13 +38,10 @@
   <h3>Sell Shares</h3>
   <form action="/api/trade/sell" method="POST">
     <input type="hidden" name="symbol" value="<%= symbol %>">
-    
     <label for="sellQty">Quantity:</label><br>
     <input type="number" id="sellQty" name="quantity" min="1" required><br><br>
-
     <p><strong>Market Price:</strong> $<span id="sell-price">...</span></p>
     <p><strong>Estimated Proceeds:</strong> $<span id="sell-proceeds">...</span></p>
-
     <button type="submit">Sell</button>
   </form>
 </div>
@@ -46,8 +49,47 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   const symbol = "<%= symbol %>";
+  let chart;
 
-  // Load stock data
+  function loadHistory(range = '30d') {
+    fetch(`/api/history/${symbol}?range=${range}`)
+      .then(res => res.json())
+      .then(data => {
+        const labels = data.map(d => new Date(d.recorded_at).toLocaleString());
+        const prices = data.map(d => parseFloat(d.price));
+
+        if (chart) {
+          chart.data.labels = labels;
+          chart.data.datasets[0].data = prices;
+          chart.update();
+        } else {
+          chart = new Chart(document.getElementById('priceChart'), {
+            type: 'line',
+            data: {
+              labels,
+              datasets: [{
+                label: `${symbol} Price History`,
+                data: prices,
+                fill: false,
+                borderWidth: 2
+              }]
+            },
+            options: {
+              plugins: {
+                legend: {
+                  display: false
+                }
+              },
+              scales: {
+                x: { title: { display: true, text: 'Time' }},
+                y: { title: { display: true, text: 'Price ($)' }}
+              }
+            }
+          });
+        }
+      });
+  }
+
   fetch(`/api/stock/${symbol}`)
     .then(res => res.json())
     .then(stock => {
@@ -56,7 +98,6 @@
       document.getElementById('buy-price').textContent = price;
       document.getElementById('sell-price').textContent = price;
 
-      // Live cost/proceeds estimate
       document.getElementById('buyQty').addEventListener('input', () => {
         const qty = parseInt(document.getElementById('buyQty').value) || 0;
         document.getElementById('buy-cost').textContent = (qty * price).toFixed(2);
@@ -68,32 +109,11 @@
       });
     });
 
-  // Load history
-  fetch(`/api/history/${symbol}`)
-    .then(res => res.json())
-    .then(data => {
-      const labels = data.map(d => new Date(d.recorded_at).toLocaleString());
-      const prices = data.map(d => parseFloat(d.price));
+  document.getElementById('rangeSelector').addEventListener('change', e => {
+    loadHistory(e.target.value);
+  });
 
-      new Chart(document.getElementById('priceChart'), {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [{
-            label: `${symbol} Price History`,
-            data: prices,
-            fill: false,
-            borderWidth: 2
-          }]
-        },
-        options: {
-          scales: {
-            x: { title: { display: true, text: 'Time' }},
-            y: { title: { display: true, text: 'Price ($)' }}
-          }
-        }
-      });
-    });
+  loadHistory(); // Initial load
 
   function showTab(tab) {
     document.getElementById('buyForm').style.display = tab === 'buy' ? 'block' : 'none';

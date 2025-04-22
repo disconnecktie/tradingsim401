@@ -14,9 +14,8 @@
   <% } else { %>
     <p class="performance <%= percentChange >= 0 ? 'positive' : 'negative' %>">
       <%= percentChange >= 0 ? '+' : '' %><%= percentChange.toFixed(2) %>% (24h)
-  </p>
-<% } %>
-
+    </p>
+  <% } %>
 </section>
 
 <section class="cash-account">
@@ -26,9 +25,16 @@
 
 <section class="portfolio-graph">
   <h4>Performance Graph</h4>
-  <div class="portfolio-graph">
-    <canvas id="portfolioChart" width="600" height="300"></canvas>
-  </div>  
+  <div class="view-range-selector">
+    <label for="rangeSelect">View Range:</label>
+    <select id="rangeSelect">
+      <option value="1d">Today</option>
+      <option value="5d">Last 5 Days</option>
+      <option value="30d">Last 30 Days</option>
+    </select>
+  </div>
+
+  <canvas id="portfolioChart" width="600" height="300"></canvas>
 </section>
 
 <section class="portfolio-stocks">
@@ -44,9 +50,7 @@
     </thead>
     <tbody>
       <% if (holdings.length === 0) { %>
-        <tr>
-          <td colspan="3">You don't own any stocks yet.</td>
-        </tr>
+        <tr><td colspan="4">You don't own any stocks yet.</td></tr>
       <% } else { %>
         <% holdings.forEach(h => { %>
           <tr>
@@ -57,7 +61,7 @@
           </tr>
         <% }) %>
       <% } %>
-    </tbody>    
+    </tbody>
   </table>
 </section>
 
@@ -67,27 +71,64 @@
   <a href="/transactions" class="dashboard-btn">📄 View Transactions</a>
 </section>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Load Luxon first -->
+<script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+
+<!-- Load Chart.js core -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- Load the Chart.js adapter for Luxon -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.0/dist/chartjs-adapter-luxon.umd.min.js"></script>
+
 <script>
-  async function renderPortfolioChart() {
-    const res = await fetch('/api/portfolio/history');
+  let chart;
+  let selectedRange = '1d';
+
+  async function renderPortfolioChart(range = '1d') {
+    selectedRange = range;
+    const res = await fetch(`/api/portfolio/history?range=${range}`);
     const data = await res.json();
 
+    const labels = data.map(d => new Date(d.date));
+    const values = data.map(d => d.value);
     const ctx = document.getElementById('portfolioChart').getContext('2d');
-    new Chart(ctx, {
+
+    if (chart) chart.destroy();
+
+    chart = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: data.map(d => new Date(d.date).toLocaleString()),
+        labels,
         datasets: [{
           label: 'Portfolio Value',
-          data: data.map(d => d.value),
+          data: values,
           borderWidth: 2,
+          pointRadius: 2,
           fill: false
         }]
       },
       options: {
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
         responsive: true,
         scales: {
+          x: {
+            type: 'time',
+            time: {
+              unit: selectedRange === '1d' ? 'hour' : 'day'
+            },
+            ticks: {
+              callback: function(value) {
+                const date = new Date(value);
+                return selectedRange === '1d'
+                  ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+              }
+            }
+          },
           y: {
             beginAtZero: false
           }
@@ -96,5 +137,9 @@
     });
   }
 
-  renderPortfolioChart();
+  document.getElementById('rangeSelect').addEventListener('change', (e) => {
+    renderPortfolioChart(e.target.value);
+  });
+
+  renderPortfolioChart(); // initial render
 </script>
