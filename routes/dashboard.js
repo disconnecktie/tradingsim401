@@ -29,9 +29,11 @@ router.get('/', checkAuth, async (req, res) => {
     const todayDate = now.toISODate(); // YYYY-MM-DD
     const [holidays] = await db.query('SELECT * FROM market_holidays WHERE holiday_date = ?', [todayDate]);
     const isHoliday = holidays.length > 0;
+    const day = now.weekday; // Luxon: 1 = Monday, 7 = Sunday
+    const isWeekday = day >= 1 && day <= 5;
 
     // ✅ Market is open only if it's not a holiday and within market hours
-    const isMarketOpen = market.is_open && now >= marketOpen && now <= marketClose && !isHoliday;
+    const isMarketOpen = market.is_open && isWeekday && now >= marketOpen && now <= marketClose && !isHoliday;
 
     // ✅ Fetch user holdings
     const [holdings] = await db.query(
