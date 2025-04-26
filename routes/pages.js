@@ -13,6 +13,11 @@ async function isMarketOpen() {
   const [marketRows] = await db.query('SELECT * FROM market_hours LIMIT 1');
   const market = marketRows[0];
 
+  const [[settings]] = await db.query('SELECT force_market_open FROM system_settings LIMIT 1');
+  const forceMarketOpen = settings?.force_market_open || false;
+
+  if (forceMarketOpen) return true; // 🚀 Forced open, override everything
+
   if (!market.is_open) return false;
 
   const tz = market.timezone || 'America/New_York';
@@ -21,13 +26,11 @@ async function isMarketOpen() {
   const open = DateTime.fromFormat(market.open_time, 'HH:mm:ss', { zone: tz });
   const close = DateTime.fromFormat(market.close_time, 'HH:mm:ss', { zone: tz });
 
-  // Check if today is Saturday or Sunday
   const dayOfWeek = now.weekday; // Monday = 1, Sunday = 7
   if (dayOfWeek === 6 || dayOfWeek === 7) {
-    return false; // Weekend
+    return false;
   }
 
-  // Check if today is a holiday
   const todayDate = now.toISODate(); // 'YYYY-MM-DD'
   const [holidays] = await db.query('SELECT * FROM market_holidays WHERE holiday_date = ?', [todayDate]);
   const isHoliday = holidays.length > 0;
