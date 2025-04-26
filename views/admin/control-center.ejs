@@ -23,3 +23,16 @@
   <p>Temporarily disable stock trading in case of emergencies or scheduled maintenance.</p>
   <button disabled class="btn btn-disabled">Lock Trading (Coming Soon)</button>
 </section>
+
+<section class="control-card">
+  <h2>🕒 Force Market Controls</h2>
+  <form action="/toggle-market" method="POST">
+    <input type="hidden" name="forceOpen" value="1">
+    <button type="submit" class="btn">Force Market Open</button>
+  </form>
+
+  <form action="/toggle-market" method="POST" style="margin-top:10px;">
+    <input type="hidden" name="forceOpen" value="0">
+    <button type="submit" class="btn">Revert Market Back to Normal</button>
+  </form>
+</section>

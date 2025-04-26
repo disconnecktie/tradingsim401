@@ -3,8 +3,8 @@ const router = express.Router();
 const checkAuth = (req, res, next) => req.session.user ? next() : res.redirect('/');
 const db = require('../db');
 const checkAdmin = (req, res, next) => {
-    if (req.session.user?.role === 'admin') return next();
-    return res.status(403).render('403', { title: 'Access Denied' });
+  if (req.session.user?.role === 'admin' || req.session.user?.role === 'superadmin') return next();
+  return res.status(403).render('403', { title: 'Access Denied' });
 };
 
 const { DateTime } = require('luxon'); // if not already at top
@@ -444,6 +444,16 @@ router.post('/admin/create-stock', checkAuth, checkAdmin, async (req, res) => {
     req.session.flash = 'Failed to create stock.';
     res.redirect('/admin/create-stock');
   }
+});
+
+router.post('/toggle-market', async (req, res) => {
+  if (!req.session.user || (req.session.user.role !== 'admin' && req.session.user.role !== 'superadmin')) {
+    return res.status(403).send('Forbidden');
+  }
+
+  const { forceOpen } = req.body;
+  await db.query('UPDATE system_settings SET force_market_open = ?', [forceOpen === "1" ? 1 : 0]);
+  res.redirect('/admin/control-center');
 });
 
 module.exports = router;

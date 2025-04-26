@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const { DateTime } = require('luxon'); // 🆕 Add Luxon for time zone support
 
+
 function checkAuth(req, res, next) {
   if (req.session.user) return next();
   res.redirect('/');
@@ -10,6 +11,8 @@ function checkAuth(req, res, next) {
 
 router.get('/', checkAuth, async (req, res) => {
   const userId = req.session.user.id;
+  const [[settings]] = await db.query('SELECT force_market_open FROM system_settings LIMIT 1');
+  const forceMarketOpen = settings?.force_market_open || false;
 
   try {
     // ✅ Fetch full user (includes cashBalance)
@@ -39,7 +42,7 @@ router.get('/', checkAuth, async (req, res) => {
     const isWeekday = day >= 1 && day <= 5;
 
     // ✅ Market is open only if it's not a holiday and within market hours
-    const isMarketOpen = market.is_open && isWeekday && now >= marketOpen && now <= marketClose && !isHoliday;
+    const isMarketOpen = (forceMarketOpen || (market.is_open && isWeekday && now >= marketOpen && now <= marketClose && !isHoliday));
 
     // ✅ Fetch user holdings
     const [holdings] = await db.query(
