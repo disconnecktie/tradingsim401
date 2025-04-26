@@ -428,4 +428,22 @@ router.post('/sell/:symbol', checkAuth, async (req, res) => {
   }
 });
 
+// POST /admin/create-stock
+router.post('/admin/create-stock', checkAuth, checkAdmin, async (req, res) => {
+  const { company_name, ticker_symbol, volume, initial_price } = req.body;
+
+  try {
+    await db.query(
+      'INSERT INTO stocks (company_name, ticker_symbol, volume, current_price) VALUES (?, ?, ?, ?)',
+      [company_name, ticker_symbol.toUpperCase(), volume, initial_price]
+    );
+    req.session.flash = 'Stock created successfully.';
+    res.redirect('/admin/create-stock');
+  } catch (err) {
+    console.error('❌ Error creating stock:', err);
+    req.session.flash = 'Failed to create stock.';
+    res.redirect('/admin/create-stock');
+  }
+});
+
 module.exports = router;
