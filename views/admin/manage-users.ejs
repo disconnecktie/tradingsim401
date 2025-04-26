@@ -15,6 +15,7 @@
       <th>Full Name</th>
       <th>Email</th>
       <th>Role</th>
+      <th>Status</th> <!-- 🆕 New column -->
       <th>Actions</th>
     </tr>
   </thead>
@@ -25,6 +26,7 @@
         <td><%= u.fullname %></td>
         <td><%= u.email %></td>
         <td><%= u.role %></td>
+        <td><%= u.is_active ? 'Active' : 'Inactive' %></td> <!-- 🆕 Show status -->
         <td>
           <% if (u.id !== user.id) { %>
             <% if (u.role === 'user') { %>
@@ -38,6 +40,18 @@
             <% } else { %>
               <span>Superadmin</span>
             <% } %>
+
+            <!-- 🆕 Enable/Disable buttons -->
+            <% if (u.is_active) { %>
+              <form method="POST" action="/admin/deactivate/<%= u.id %>">
+                <button type="submit" style="background-color: red;">Deactivate</button>
+              </form>
+            <% } else { %>
+              <form method="POST" action="/admin/reactivate/<%= u.id %>">
+                <button type="submit" style="background-color: green;">Reactivate</button>
+              </form>
+            <% } %>
+
           <% } else { %>
             <span>You</span>
           <% } %>
@@ -46,5 +60,6 @@
     <% }); %>
   </tbody>
 </table>
+
 <br>
 <a href="/admin/control-center" class="btn">← Back to Control Center</a>

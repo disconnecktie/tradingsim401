@@ -38,8 +38,8 @@ router.post('/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     await db.query(
-      'INSERT INTO users (fullname, email, password_hash, cashBalance) VALUES (?, ?, ?, ?)',
-      [fullname, email, hashedPassword, 0.00]
+      'INSERT INTO users (fullname, email, password_hash, cashBalance, is_active) VALUES (?, ?, ?, ?, ?)',
+      [fullname, email, hashedPassword, 0.00, true]
     );    
 
     req.session.user = { name: fullname, email, role: 'user' };
@@ -65,6 +65,11 @@ router.post('/login', async (req, res) => {
     }
 
     const user = results[0];
+    // 🛡️ New: Check if user is active
+    if (!user.is_active) {
+      return res.render('login', { title: 'Login', error: 'Your account has been deactivated. Contact support.' });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password_hash);
 
     if (!isMatch) {

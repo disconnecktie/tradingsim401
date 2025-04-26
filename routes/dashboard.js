@@ -15,6 +15,12 @@ router.get('/', checkAuth, async (req, res) => {
     // ✅ Fetch full user (includes cashBalance)
     const [userRows] = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
     const fullUser = userRows[0];
+
+    if (!fullUser) {
+      console.error('❌ No user found for session user ID:', userId);
+      return res.redirect('/'); // Or redirect to login
+    }
+
     fullUser.cashBalance = parseFloat(fullUser.cashBalance);
 
     // ✅ Fetch market hours

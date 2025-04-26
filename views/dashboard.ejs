@@ -20,7 +20,7 @@
 
 <section class="cash-account">
   <h4>Cash Account</h4>
-  <p>Available Cash: $<%= user.cashBalance.toFixed(2) %></p>
+  <p>Available Cash: $<%= (user.cashBalance || 0).toFixed(2) %></p>
 </section>
 
 <section class="portfolio-graph">

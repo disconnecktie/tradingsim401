@@ -114,10 +114,14 @@ router.get('/admin/control-center', checkAuth, checkRootAdmin, (req, res) =>
 
 router.get('/admin/manage-users', checkAuth, checkRootAdmin, async (req, res) => {
     try {
-      const [users] = await db.query('SELECT id, fullname, email, role FROM users ORDER BY id');
+      const [users] = await db.query('SELECT id, fullname, email, role, is_active FROM users ORDER BY id');
+      const flash = req.session.flash;
+      delete req.session.flash;
       res.render('admin/manage-users', {
         title: 'Manage Users',
-        users
+        users,
+        user: req.session.user,
+        flash
       });
     } catch (err) {
       console.error('❌ Error loading users:', err);
@@ -166,6 +170,22 @@ router.post('/admin/demote/:id', checkAuth, checkRootAdmin, async (req, res) => 
       req.session.flash = 'Failed to demote user.';
     }
     res.redirect('/admin/manage-users');
+});
+
+// POST /admin/deactivate/:id
+router.post('/admin/deactivate/:id', async (req, res) => {
+  const userId = req.params.id;
+  await db.query('UPDATE users SET is_active = FALSE WHERE id = ?', [userId]);
+  req.session.flash = 'User successfully deactivated.';
+  res.redirect('/admin/manage-users');
+});
+
+// POST /admin/reactivate/:id
+router.post('/admin/reactivate/:id', async (req, res) => {
+  const userId = req.params.id;
+  await db.query('UPDATE users SET is_active = TRUE WHERE id = ?', [userId]);
+  req.session.flash = 'User successfully reactivated.';
+  res.redirect('/admin/manage-users');
 });
 
 // Save Market Hours Updates
