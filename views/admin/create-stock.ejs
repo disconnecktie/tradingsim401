@@ -5,17 +5,14 @@
 <% } %>
 
 <form action="/admin/create-stock" method="POST" class="market-hours-form">
-  <label for="company_name">Company Name:</label>
-  <input type="text" id="company_name" name="company_name" required>
-
   <label for="ticker_symbol">Ticker Symbol:</label>
-  <input type="text" id="ticker_symbol" name="ticker_symbol" maxlength="5" required>
+  <input type="text" id="ticker_symbol" name="ticker_symbol" maxlength="10" required>
 
-  <label for="volume">Total Shares:</label>
-  <input type="number" id="volume" name="volume" min="1" required>
+  <label for="current_price">Initial Price ($):</label>
+  <input type="number" id="current_price" name="current_price" step="0.01" min="0.01" required>
 
-  <label for="initial_price">Initial Price ($):</label>
-  <input type="number" id="initial_price" name="initial_price" step="0.01" min="0.01" required>
+  <label for="volume">Total Shares (Volume):</label>
+  <input type="number" id="volume" name="volume" min="0" required>
 
   <button type="submit">Create Stock</button>
 </form>

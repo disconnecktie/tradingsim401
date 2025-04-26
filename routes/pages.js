@@ -431,14 +431,22 @@ router.post('/sell/:symbol', checkAuth, async (req, res) => {
   }
 });
 
-// POST /admin/create-stock
 router.post('/admin/create-stock', checkAuth, checkAdmin, async (req, res) => {
-  const { company_name, ticker_symbol, volume, initial_price } = req.body;
+  const { ticker_symbol, current_price, volume } = req.body;
 
   try {
     await db.query(
-      'INSERT INTO stocks (company_name, ticker_symbol, volume, current_price) VALUES (?, ?, ?, ?)',
-      [company_name, ticker_symbol.toUpperCase(), volume, initial_price]
+      'INSERT INTO stocks (ticker_symbol, current_price, volume, daily_high, daily_low, market_cap, open_price, close_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        ticker_symbol.toUpperCase(),
+        parseFloat(current_price),
+        parseInt(volume),
+        parseFloat(current_price), // daily_high (initially same as current_price)
+        parseFloat(current_price), // daily_low (initially same as current_price)
+        parseFloat(current_price) * parseInt(volume), // market_cap = price * shares
+        parseFloat(current_price), // open_price
+        parseFloat(current_price)  // close_price
+      ]
     );
     req.session.flash = 'Stock created successfully.';
     res.redirect('/admin/create-stock');
