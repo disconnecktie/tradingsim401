@@ -7,6 +7,34 @@ const checkAdmin = (req, res, next) => {
     return res.status(403).render('403', { title: 'Access Denied' });
 };
 
+const { DateTime } = require('luxon'); // if not already at top
+
+async function isMarketOpen() {
+  const [marketRows] = await db.query('SELECT * FROM market_hours LIMIT 1');
+  const market = marketRows[0];
+
+  if (!market.is_open) return false;
+
+  const tz = market.timezone || 'America/New_York';
+  const now = DateTime.now().setZone(tz);
+
+  const open = DateTime.fromFormat(market.open_time, 'HH:mm:ss', { zone: tz });
+  const close = DateTime.fromFormat(market.close_time, 'HH:mm:ss', { zone: tz });
+
+  // Check if today is Saturday or Sunday
+  const dayOfWeek = now.weekday; // Monday = 1, Sunday = 7
+  if (dayOfWeek === 6 || dayOfWeek === 7) {
+    return false; // Weekend
+  }
+
+  // Check if today is a holiday
+  const todayDate = now.toISODate(); // 'YYYY-MM-DD'
+  const [holidays] = await db.query('SELECT * FROM market_holidays WHERE holiday_date = ?', [todayDate]);
+  const isHoliday = holidays.length > 0;
+
+  return now >= open && now <= close && !isHoliday;
+}
+
 // User routes
 router.get('/search', checkAuth, async (req, res) => {
     const query = req.query.q?.toUpperCase() || '';
@@ -26,13 +54,32 @@ router.get('/search', checkAuth, async (req, res) => {
     }
 });
 
-router.get('/ticker/:symbol', checkAuth, (req, res) => {
-    const referer = req.get('Referrer') || '/search'; // fallback to /search
+router.get('/ticker/:symbol', checkAuth, async (req, res) => {
+  const symbol = req.params.symbol.toUpperCase();
+  const userId = req.session.user.id;
+  const referer = req.get('Referrer') || '/search';
+
+  try {
+    const [holdingRows] = await db.query(
+      'SELECT quantity FROM user_holdings WHERE user_id = ? AND ticker_symbol = ?',
+      [userId, symbol]
+    );
+
+    const ownedQuantity = holdingRows.length > 0 ? holdingRows[0].quantity : 0;
+
+    const marketOpen = await isMarketOpen(); // 🆕 Add this line
+
     res.render('ticker', {
       title: 'Stock Info',
-      symbol: req.params.symbol,
-      referer
+      symbol,
+      referer,
+      ownedQuantity,
+      marketOpen // 🆕 Pass to EJS
     });
+  } catch (err) {
+    console.error('❌ Error loading stock page:', err);
+    res.redirect('/dashboard');
+  }
 });
 
 router.get('/transactions', checkAuth, async (req, res) => {
@@ -233,6 +280,152 @@ router.post('/admin/holidays/delete/:id', checkAuth, checkAdmin, async (req, res
       req.session.flash = 'Failed to delete holiday.';
     }
     res.redirect('/admin/holidays');
-});  
+});
+
+// POST /buy/:symbol
+router.post('/buy/:symbol', checkAuth, async (req, res) => {
+  const userId = req.session.user.id;
+  const tickerSymbol = req.params.symbol.toUpperCase();
+  const quantity = parseInt(req.body.quantity, 10);
+
+  if (!quantity || quantity <= 0) {
+    req.session.flash = 'Invalid quantity.';
+    return res.redirect('/dashboard');
+  }
+
+  if (!(await isMarketOpen())) {
+    req.session.flash = 'Market is currently closed. Cannot buy stocks.';
+    return res.redirect('/dashboard');
+  }
+
+  try {
+    // Get current stock price
+    const [stockRows] = await db.query('SELECT current_price FROM stocks WHERE ticker_symbol = ?', [tickerSymbol]);
+    if (stockRows.length === 0) {
+      req.session.flash = 'Stock not found.';
+      return res.redirect('/dashboard');
+    }
+    const stockPrice = parseFloat(stockRows[0].current_price);
+
+    const totalCost = quantity * stockPrice;
+
+    // Get user's current cash balance
+    const [userRows] = await db.query('SELECT cashBalance FROM users WHERE id = ?', [userId]);
+    const cashBalance = parseFloat(userRows[0].cashBalance);
+
+    if (cashBalance < totalCost) {
+      req.session.flash = 'Insufficient funds.';
+      return res.redirect('/dashboard');
+    }
+
+    // Deduct cash
+    await db.query('UPDATE users SET cashBalance = cashBalance - ? WHERE id = ?', [totalCost, userId]);
+
+    // Add to holdings (insert or update)
+    const [holdingRows] = await db.query(
+      'SELECT quantity FROM user_holdings WHERE user_id = ? AND ticker_symbol = ?',
+      [userId, tickerSymbol]
+    );
+
+    if (holdingRows.length > 0) {
+      // Update existing holding
+      await db.query(
+        'UPDATE user_holdings SET quantity = quantity + ? WHERE user_id = ? AND ticker_symbol = ?',
+        [quantity, userId, tickerSymbol]
+      );
+    } else {
+      // Insert new holding
+      await db.query(
+        'INSERT INTO user_holdings (user_id, ticker_symbol, quantity) VALUES (?, ?, ?)',
+        [userId, tickerSymbol, quantity]
+      );
+    }
+
+    // Record transaction
+    await db.query(
+      `INSERT INTO user_transactions (user_id, ticker_symbol, quantity, price_at_transaction, transaction_type, transaction_time)
+       VALUES (?, ?, ?, ?, 'buy', NOW())`,
+      [userId, tickerSymbol, quantity, stockPrice]
+    );
+
+    req.session.flash = `Successfully purchased ${quantity} shares of ${tickerSymbol}.`;
+    res.redirect('/dashboard');
+
+  } catch (err) {
+    console.error('❌ Error processing purchase:', err);
+    req.session.flash = 'Purchase failed.';
+    res.redirect('/dashboard');
+  }
+});
+
+// POST /sell/:symbol
+router.post('/sell/:symbol', checkAuth, async (req, res) => {
+  const userId = req.session.user.id;
+  const tickerSymbol = req.params.symbol.toUpperCase();
+  const quantity = parseInt(req.body.quantity, 10);
+
+  if (!quantity || quantity <= 0) {
+    req.session.flash = 'Invalid quantity.';
+    return res.redirect('/dashboard');
+  }
+
+  if (!(await isMarketOpen())) {
+    req.session.flash = 'Market is currently closed. Cannot sell stocks.';
+    return res.redirect('/dashboard');
+  }  
+
+  try {
+    // Get current stock price
+    const [stockRows] = await db.query('SELECT current_price FROM stocks WHERE ticker_symbol = ?', [tickerSymbol]);
+    if (stockRows.length === 0) {
+      req.session.flash = 'Stock not found.';
+      return res.redirect('/dashboard');
+    }
+    const stockPrice = parseFloat(stockRows[0].current_price);
+
+    const totalProceeds = quantity * stockPrice;
+
+    // Get user's current holding
+    const [holdingRows] = await db.query(
+      'SELECT quantity FROM user_holdings WHERE user_id = ? AND ticker_symbol = ?',
+      [userId, tickerSymbol]
+    );
+
+    if (holdingRows.length === 0 || holdingRows[0].quantity < quantity) {
+      req.session.flash = 'Not enough shares to sell.';
+      return res.redirect('/dashboard');
+    }
+
+    // Subtract from holdings
+    await db.query(
+      'UPDATE user_holdings SET quantity = quantity - ? WHERE user_id = ? AND ticker_symbol = ?',
+      [quantity, userId, tickerSymbol]
+    );
+
+    // Add cash to user
+    await db.query('UPDATE users SET cashBalance = cashBalance + ? WHERE id = ?', [totalProceeds, userId]);
+
+    // Record transaction
+    await db.query(
+      `INSERT INTO user_transactions (user_id, ticker_symbol, quantity, price_at_transaction, transaction_type, transaction_time)
+       VALUES (?, ?, ?, ?, 'sell', NOW())`,
+      [userId, tickerSymbol, quantity, stockPrice]
+    );
+
+    // Optional: delete holding if quantity becomes zero
+    await db.query(
+      'DELETE FROM user_holdings WHERE user_id = ? AND ticker_symbol = ? AND quantity <= 0',
+      [userId, tickerSymbol]
+    );
+
+    req.session.flash = `Successfully sold ${quantity} shares of ${tickerSymbol}.`;
+    res.redirect('/dashboard');
+
+  } catch (err) {
+    console.error('❌ Error processing sale:', err);
+    req.session.flash = 'Sale failed.';
+    res.redirect('/dashboard');
+  }
+});
 
 module.exports = router;

@@ -1,5 +1,11 @@
 <main class="cash-page">
     <h2>Manage Funds 💵</h2>
+
+    <% if (flash) { %>
+      <div class="flash-msg">
+        <%= flash %>
+      </div>
+    <% } %>    
   
     <section class="cash-balance">
       <h3>Available Balance</h3>
